@@ -1,3 +1,5 @@
+#!/bin/env python
+
 #import the necessary package to process data in JSON format
 try:
     import json
@@ -8,10 +10,10 @@ except ImportError:
 from twitter import Twitter, OAuth, TwitterHTTPError, TwitterStream
 
 # Variables that contains the user credentials to access Twitter API 
-ACCESS_TOKEN =    #'YOUR ACCESS TOKEN"'
-ACCESS_SECRET =   #'YOUR ACCESS TOKEN SECRET'
-CONSUMER_KEY =    #'YOUR API KEY'
-CONSUMER_SECRET = #'ENTER YOUR API SECRET'
+ACCESS_TOKEN =    '3862106309-Ta2UbYJHHHL63XwzuBRFLfJ9kLnUsFsqlZnswEK'#'YOUR ACCESS TOKEN"'
+ACCESS_SECRET =   'e6xe6NySQCqslwirfCNmOzkwNiCnosxpkpdybKldfa46p' #'YOUR ACCESS TOKEN SECRET'
+CONSUMER_KEY =    'N7aJMwQpUAt7N6bgZmNwHs7dD' #'YOUR API KEY'
+CONSUMER_SECRET = 'Nah2IKCQDaPLIjPkGRrKwrowSCGvopi2IbcfrG61GrTgjfBQ66' #'ENTER YOUR API SECRET'
 
 oauth = OAuth(ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
 
@@ -47,33 +49,51 @@ while keep_going:
     #create a string out of the words
     tempwords = []
     for x in words:
-        tempwords.append(x + ",")
+        tempwords.append(x + ',')
 
     words_as_string = ''.join(tempwords)
-
+ 
+    #print("do a lookup")
     results = twitter.users.lookup(screen_name=words_as_string)
+    #print("finished the lookup")
+
+    for x in words:
+        x = x.encode('ascii', 'ignore')    
 
     #only keep those who aren't matched
     for founduser in results:
-        name = founduser["screen_name"].lower()
+        name = founduser["screen_name"].lower().encode('ascii', 'ignore')
         if name in words:
-            words.remove(name)
-    
+            words.remove(name) #problem: words is unicode, name is str
+    #print("removed matched words") 
     #the remaining words may be from suspended accounts
     #the only way I've found to check is to do a "show" API call - this will tell you if the account is suspended or just hasn't been created yet
+    
+    #print(words)
+
     badwords = []
     for x in words:
         try:
             result = twitter.users.show(screen_name=x)
+            #print("read remaining name")
         except TwitterHTTPError as err:
             err_code = err.args[0][-5:-3]
-            if err_code == "63": #error code for suspended account
+            #print("suspended account")
+            #print(err.args[0])
+            #print(err_code)
+            #print(err.args[0][-5:-3])
+            if err_code == "63" or err_code ==".'": #error code for suspended account - 'd has to be changed
                 badwords.append(x)
+            if err_code == "88" or err_code == "d'": #error code for over rate limit
+                print("over rate limit")
+  
+    print("badwords")
     for x in badwords:
+        print(x) 
         words.remove(x)
 
-    #print "remaining words:"
-    #print words
+    print("remaining words:")
+    print(words)
     #some of the remaining words (for example: bollywood) give a "Sorry, that page doesn't exist" message yet you're not allowed to create a page with that handle
 
     #for now save to a file
